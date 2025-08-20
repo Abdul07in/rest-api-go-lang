@@ -344,3 +344,234 @@ The application is designed to be highly available and scalable:
 3. Commit your changes
 4. Push to the branch
 5. Create a new Pull Request
+
+````markdown
+# Docker Setup Instructions for Student API Project
+
+## Prerequisites
+
+- Docker installed
+- Docker Swarm initialized
+- Git repository cloned
+
+## 1. Initialize Docker Swarm (if not already done)
+
+```bash
+# If you have multiple network interfaces, specify the advertise address
+docker swarm init --advertise-addr <your-ip-address>
+
+# If you have only one network interface, simply use:
+docker swarm init
+```
+````
+
+## 2. Build the API Image
+
+```bash
+# Navigate to project directory
+cd rest-api-go-lang
+
+# Build the API image
+docker build -t localhost/student-api:latest .
+```
+
+## 3. Create Required Networks
+
+```bash
+# Create overlay network for services
+docker network create --driver overlay student-api-network
+```
+
+## 4. Prepare Configuration Files
+
+```bash
+# Create necessary directories
+mkdir -p mysql/config prometheus grafana nginx
+
+# Ensure configuration files exist:
+# - mysql/config/my.cnf
+# - prometheus/prometheus.yml
+# - nginx/nginx.conf
+# These should already be in your repository
+```
+
+## 5. Deploy the Stack
+
+```bash
+# Deploy all services
+docker stack deploy -c docker-compose.yml student-api
+
+# Verify services are running
+docker service ls
+
+# Check specific service status
+docker service ps student-api_api
+docker service ps student-api_mysql
+docker service ps student-api_nginx
+docker service ps student-api_prometheus
+docker service ps student-api_grafana
+```
+
+## 6. Monitor Deployment
+
+```bash
+# Watch service logs
+docker service logs -f student-api_api
+
+# Check MySQL logs
+docker service logs -f student-api_mysql
+
+# Check NGINX logs
+docker service logs -f student-api_nginx
+```
+
+## 7. Access Services
+
+- API: http://localhost:80/api/students
+- Prometheus: http://localhost:9090
+- Grafana: http://localhost:3000 (default credentials: admin/admin)
+
+## 8. Scale Services
+
+```bash
+# Scale API service
+docker service scale student-api_api=5
+
+# Scale NGINX
+docker service scale student-api_nginx=3
+```
+
+## 9. Useful Management Commands
+
+```bash
+# List all running services
+docker service ls
+
+# Check service details
+docker service inspect student-api_api
+
+# Check service logs
+docker service logs student-api_api
+
+# Update a service
+docker service update --image localhost/student-api:new-version student-api_api
+
+# Remove the entire stack
+docker stack rm student-api
+
+# List all stacks
+docker stack ls
+
+# List stack services
+docker stack services student-api
+
+# View stack tasks
+docker stack ps student-api
+```
+
+## 10. Troubleshooting Commands
+
+```bash
+# Check service tasks (containers)
+docker service ps --no-trunc student-api_api
+
+# View container logs
+docker service logs -f student-api_api
+
+# Inspect service configuration
+docker service inspect student-api_api
+
+# Check network connectivity
+docker network inspect student-api_student-api-network
+
+# View resource usage
+docker stats
+```
+
+## 11. Health Checks
+
+```bash
+# API health check
+curl http://localhost/health
+
+# MySQL health check
+docker exec $(docker ps -q -f name=student-api_mysql) mysqladmin ping -h localhost -u root -proot
+
+# Check all service health status
+docker stack ps student-api
+```
+
+## 12. Cleanup
+
+```bash
+# Remove the stack
+docker stack rm student-api
+
+# Remove the network
+docker network rm student-api_student-api-network
+
+# Clean up unused resources
+docker system prune -f
+
+# Remove volumes (caution: this deletes data)
+docker volume prune -f
+```
+
+## Environment Variables
+
+Make sure these environment variables are set correctly in docker-compose.yml:
+
+```yaml
+environment:
+  - DB_HOST=mysql
+  - DB_PORT=3306
+  - DB_USER=root
+  - DB_PASSWORD=root
+  - DB_NAME=student_db
+  - SERVER_PORT=8080
+  - WORKER_POOL_SIZE=50
+  - MAX_JOB_QUEUE_SIZE=100
+```
+
+## Service URLs and Ports
+
+- API: http://localhost:80
+- MySQL: localhost:3306
+- Prometheus: http://localhost:9090
+- Grafana: http://localhost:3000
+
+## Common Issues and Solutions
+
+1. If services fail to start:
+
+   ```bash
+   # Check service logs
+   docker service logs student-api_api
+   ```
+
+2. If MySQL connection fails:
+
+   ```bash
+   # Check if MySQL is healthy
+   docker service ps student-api_mysql
+   ```
+
+3. If network issues occur:
+
+   ```bash
+   # Recreate the network
+   docker network rm student-api_student-api-network
+   docker network create --driver overlay student-api-network
+   ```
+
+4. If you need to rebuild and redeploy:
+
+   ```bash
+   # Rebuild image
+   docker build -t localhost/student-api:latest .
+
+   # Update service
+   docker service update --force student-api_api
+   ```
+
+Remember to always check the logs when troubleshooting issues. The stack is designed to be resilient with health checks and automatic restarts, but monitoring the logs will help identify any persistent problems.
