@@ -39,17 +39,20 @@ A RESTful API for managing student data with full CRUD operations.
 ## Local Development
 
 1. Clone the repository:
+
    ```bash
    git clone <repository-url>
    cd rest-api-go
    ```
 
 2. Install dependencies:
+
    ```bash
    go mod download
    ```
 
 3. Set up environment variables in `.env` file:
+
    ```
    DB_HOST=localhost
    DB_PORT=3306
