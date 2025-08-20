@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   api:
-    build: .
+    image: ${DOCKER_REGISTRY:-localhost}/student-api:latest
     deploy:
       mode: replicated
       replicas: 3
@@ -121,4 +121,5 @@ volumes:
 
 networks:
   student-api-network:
-    driver: bridge
+    driver: overlay
+    attachable: true
