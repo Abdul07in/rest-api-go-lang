@@ -1,6 +1,9 @@
 package domain
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 type Student struct {
 	ID        uint      `json:"id"`
@@ -22,9 +25,9 @@ type StudentRepository interface {
 }
 
 type StudentService interface {
-	CreateStudent(student *Student) error
-	GetStudent(id uint) (*Student, error)
-	GetAllStudents() ([]Student, error)
-	UpdateStudent(student *Student) error
-	DeleteStudent(id uint) error
+	CreateStudent(ctx context.Context, student *Student) error
+	GetStudent(ctx context.Context, id uint) (*Student, error)
+	GetAllStudents(ctx context.Context) ([]Student, error)
+	UpdateStudent(ctx context.Context, student *Student) error
+	DeleteStudent(ctx context.Context, id uint) error
 }

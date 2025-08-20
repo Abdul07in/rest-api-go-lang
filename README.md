@@ -1,12 +1,14 @@
 # Student API
 
-A RESTful API for managing student data with full CRUD operations.
+A high-performance, scalable RESTful API for managing student data with full CRUD operations. Features async processing, comprehensive monitoring, and distributed tracing.
 
 ## Technologies Used
 
 - Go 1.24
 - MySQL 8.0
 - Docker & Docker Compose
+- NGINX Load Balancer
+- Prometheus & Grafana
 - GitHub Actions for CI/CD
 
 ## Project Structure
@@ -35,6 +37,8 @@ A RESTful API for managing student data with full CRUD operations.
 - Go 1.24 or higher
 - Docker and Docker Compose
 - MySQL 8.0
+- Prometheus (optional, for metrics)
+- Grafana (optional, for dashboards)
 
 ## Local Development
 
@@ -60,6 +64,8 @@ A RESTful API for managing student data with full CRUD operations.
    DB_PASSWORD=root
    DB_NAME=student_db
    SERVER_PORT=8080
+   WORKER_POOL_SIZE=50      # Number of worker goroutines
+   MAX_JOB_QUEUE_SIZE=100   # Size of job queue buffer
    ```
 
 4. Run with Docker Compose:
@@ -258,7 +264,43 @@ The application can be deployed using Docker. The CI/CD pipeline will:
 - `DEPLOY_USERNAME`: SSH username for production server
 - `DEPLOY_SSH_KEY`: SSH private key for production server
 
-## Logging
+## Architecture Features
+
+### Async Processing
+
+The API uses a worker pool pattern for handling requests:
+
+- Configurable number of worker goroutines (default: 50)
+- Job queue with buffer (default: 100)
+- Context-aware operations with timeouts
+- Graceful error handling and recovery
+
+### Load Balancing
+
+NGINX load balancer provides:
+
+- Request distribution across API instances
+- Health checks
+- Connection limiting
+- WebSocket support
+- Custom timeout configurations
+
+### Monitoring & Metrics
+
+1. **Prometheus Integration**:
+
+   - HTTP request metrics
+   - Database connection stats
+   - Worker pool utilization
+   - Custom business metrics
+
+2. **Grafana Dashboards**:
+   - Real-time request monitoring
+   - Error rate tracking
+   - Performance metrics
+   - System resource usage
+
+## Logging and Tracing
 
 The application includes comprehensive request logging with:
 
@@ -267,8 +309,33 @@ The application includes comprehensive request logging with:
 - Operation logging
 - Client IP tracking
 - Response times
+- Worker pool metrics
 
-Each log entry includes a trace ID that can be used to follow a request through all its operations.
+Each log entry includes a trace ID that can be used to follow a request through all its operations, including async processing.
+
+## Infrastructure
+
+The application is designed to be highly available and scalable:
+
+1. **API Servers**:
+
+   - Multiple replicas for high availability
+   - Resource limits and reservations
+   - Health checks
+   - Rolling updates
+
+2. **Database**:
+
+   - MySQL 8.0 with proper timezone config
+   - Automated schema creation
+   - Connection pooling
+   - Index optimization
+
+3. **Load Balancer**:
+   - Least connections algorithm
+   - Health monitoring
+   - Timeout configurations
+   - SSL termination (optional)
 
 ## Contributing
 

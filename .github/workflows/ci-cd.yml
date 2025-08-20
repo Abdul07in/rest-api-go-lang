@@ -7,9 +7,27 @@ on:
     branches: [main]
 
 jobs:
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          args: --timeout=5m
+
   test:
     name: Run Tests
     runs-on: ubuntu-latest
+    needs: lint
 
     services:
       mysql:
@@ -17,9 +35,18 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: student_db
+          TZ: Asia/Kolkata
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+          --health-start-period=30s
+        volumes:
+          - ${{ github.workspace }}/mysql/config/my.cnf:/etc/mysql/my.cnf
+          - ${{ github.workspace }}/migrations:/docker-entrypoint-initdb.d
 
     steps:
       - uses: actions/checkout@v4
@@ -32,14 +59,24 @@ jobs:
       - name: Install dependencies
         run: go mod download
 
-      - name: Run tests
-        run: go test -v ./...
+      - name: Run unit tests
+        run: go test -v -short ./...
+
+      - name: Run integration tests
+        run: go test -v -tags=integration ./...
         env:
           DB_HOST: localhost
           DB_PORT: 3306
           DB_USER: root
           DB_PASSWORD: root
           DB_NAME: student_db
+          WORKER_POOL_SIZE: 50
+          MAX_JOB_QUEUE_SIZE: 100
+
+      - name: Run load tests
+        run: |
+          go install github.com/tsenart/vegeta@latest
+          echo "GET http://localhost:8080/health" | vegeta attack -duration=30s -rate=50 | vegeta report
 
   build:
     name: Build and Push Docker Image
@@ -70,6 +107,18 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy Configuration Files
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USERNAME }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: 'docker-compose.yml,nginx/,prometheus/,grafana/'
+          target: '/opt/student-api'
+          strip_components: 1
+
       - name: Deploy to production server
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -78,5 +127,16 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
             cd /opt/student-api
+            # Pull latest images
             docker-compose pull
-            docker-compose up -d
+
+            # Deploy with zero downtime
+            docker-compose up -d --remove-orphans --scale api=3
+
+            # Verify deployment
+            sleep 30
+            docker-compose ps
+            curl -f http://localhost/health
+
+            # Cleanup
+            docker system prune -f
