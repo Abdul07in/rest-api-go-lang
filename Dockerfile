@@ -24,12 +24,14 @@ WORKDIR /app
 COPY --from=builder /app/api .
 COPY --from=builder /app/.env .
 COPY --from=builder /app/migrations ./migrations
+COPY scripts/wait-for-it.sh /wait-for-it.sh
 
 # Install necessary runtime dependencies
-RUN apk --no-cache add ca-certificates
+RUN apk --no-cache add ca-certificates netcat-openbsd && \
+    chmod +x /wait-for-it.sh
 
 # Expose the application port
 EXPOSE 8080
 
-# Command to run the application
-CMD ["./api"]
+# Command to run the application will be specified in docker-compose.yml
+ENTRYPOINT ["/wait-for-it.sh"]

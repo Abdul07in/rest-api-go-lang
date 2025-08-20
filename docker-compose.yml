@@ -13,9 +13,12 @@ services:
       - DB_NAME=student_db
       - SERVER_PORT=8080
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     networks:
       - student-api-network
+    command: ['mysql', '3306', './api']
+    restart: unless-stopped
 
   mysql:
     image: mysql:8.0
@@ -29,6 +32,14 @@ services:
       - ./migrations:/docker-entrypoint-initdb.d
     networks:
       - student-api-network
+    healthcheck:
+      test:
+        ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-u', 'root', '-proot']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
 
 volumes:
   mysql-data:
