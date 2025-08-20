@@ -67,13 +67,179 @@ A RESTful API for managing student data with full CRUD operations.
    docker-compose up --build
    ```
 
-## API Endpoints
+## API Endpoints and Usage Examples
 
-- `POST /api/students` - Create a new student
-- `GET /api/students` - Get all students
-- `GET /api/students/{id}` - Get a student by ID
-- `PUT /api/students/{id}` - Update a student
-- `DELETE /api/students/{id}` - Delete a student
+### Create a New Student (POST)
+
+```bash
+curl -X POST http://localhost:8080/api/students \
+  -H "Content-Type: application/json" \
+  -d '{
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john.doe@example.com",
+    "age": 20,
+    "grade": 85.5
+  }'
+```
+
+Response:
+
+```json
+{
+  "id": 1,
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john.doe@example.com",
+  "age": 20,
+  "grade": 85.5,
+  "createdAt": "2025-08-20T16:45:00Z",
+  "updatedAt": "2025-08-20T16:45:00Z"
+}
+```
+
+### Get All Students (GET)
+
+```bash
+curl http://localhost:8080/api/students
+```
+
+Response:
+
+```json
+[
+  {
+    "id": 1,
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john.doe@example.com",
+    "age": 20,
+    "grade": 85.5,
+    "createdAt": "2025-08-20T16:45:00Z",
+    "updatedAt": "2025-08-20T16:45:00Z"
+  },
+  {
+    "id": 2,
+    "firstName": "Jane",
+    "lastName": "Smith",
+    "email": "jane.smith@example.com",
+    "age": 22,
+    "grade": 92.0,
+    "createdAt": "2025-08-20T16:46:00Z",
+    "updatedAt": "2025-08-20T16:46:00Z"
+  }
+]
+```
+
+### Get Student by ID (GET)
+
+```bash
+curl http://localhost:8080/api/students/1
+```
+
+Response:
+
+```json
+{
+  "id": 1,
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john.doe@example.com",
+  "age": 20,
+  "grade": 85.5,
+  "createdAt": "2025-08-20T16:45:00Z",
+  "updatedAt": "2025-08-20T16:45:00Z"
+}
+```
+
+### Update Student (PUT)
+
+```bash
+curl -X PUT http://localhost:8080/api/students/1 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john.doe@example.com",
+    "age": 21,
+    "grade": 88.5
+  }'
+```
+
+Response:
+
+```json
+{
+  "id": 1,
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john.doe@example.com",
+  "age": 21,
+  "grade": 88.5,
+  "createdAt": "2025-08-20T16:45:00Z",
+  "updatedAt": "2025-08-20T16:50:00Z"
+}
+```
+
+### Delete Student (DELETE)
+
+```bash
+curl -X DELETE http://localhost:8080/api/students/1
+```
+
+Response: Empty with status code 204 (No Content)
+
+### PowerShell Examples
+
+For Windows PowerShell users, here are the equivalent commands:
+
+Create Student:
+
+```powershell
+$body = @{
+    firstName = "John"
+    lastName = "Doe"
+    email = "john.doe@example.com"
+    age = 20
+    grade = 85.5
+} | ConvertTo-Json
+
+Invoke-RestMethod -Method Post -Uri "http://localhost:8080/api/students" `
+  -ContentType "application/json" -Body $body
+```
+
+Update Student:
+
+```powershell
+$body = @{
+    firstName = "John"
+    lastName = "Doe"
+    email = "john.doe@example.com"
+    age = 21
+    grade = 88.5
+} | ConvertTo-Json
+
+Invoke-RestMethod -Method Put -Uri "http://localhost:8080/api/students/1" `
+  -ContentType "application/json" -Body $body
+```
+
+Get All Students:
+
+```powershell
+Invoke-RestMethod -Method Get -Uri "http://localhost:8080/api/students"
+```
+
+Get Student by ID:
+
+```powershell
+Invoke-RestMethod -Method Get -Uri "http://localhost:8080/api/students/1"
+```
+
+Delete Student:
+
+```powershell
+Invoke-RestMethod -Method Delete -Uri "http://localhost:8080/api/students/1"
+```
 
 ## Deployment
 
